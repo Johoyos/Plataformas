@@ -1,2 +1,3 @@
-# Plataformas
-Proyecto en Android del curso de Plataformas
+# Backend del proyecto en Android de plataformas
+
+Descargar y compilar el proyecto
