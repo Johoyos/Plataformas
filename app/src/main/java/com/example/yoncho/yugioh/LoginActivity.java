@@ -37,6 +37,7 @@ import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 
@@ -51,11 +52,17 @@ import java.util.Map;
 
 
 public class LoginActivity  extends AppCompatActivity {
-    private EditText email, password;
+    private EditText username, password;
     private Button btn_login;
     private TextView link_register;
     private ProgressBar loading;
     private static String server_url  = "http://54.68.18.251:3000/auth/login"  ;
+
+
+
+    public void showMessage(String message) {
+        Toast.makeText(this, message, Toast.LENGTH_LONG).show();
+    }
 
     @Override
     protected void onCreate (Bundle savedInstanceState) {
@@ -63,21 +70,23 @@ public class LoginActivity  extends AppCompatActivity {
         setContentView(R.layout.activity_login);
 
         loading = findViewById(R.id.loading);
-        email = findViewById(R.id.email);
+        username = findViewById(R.id.username);
         password = findViewById(R.id.password);
         btn_login = findViewById(R.id.btn_login);
         link_register = findViewById(R.id.link_register);
 
+
+
         btn_login.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View v){
-                String mEmail = email.getText().toString().trim();
+                String musername = username.getText().toString().trim();
                 String mPass = password.getText().toString().trim();
 
-                if (!mEmail.isEmpty() || !mPass.isEmpty()) {
-                    Login(mEmail, mPass);
+                if (!musername.isEmpty() || !mPass.isEmpty()) {
+                    Login(musername, mPass);
                 } else {
-                    email.setError("Ingresa ID correctamente");
+                    username.setError("Ingresa ID correctamente");
                     password.setError("Please inerte ppassword");
                 }
             }
@@ -89,68 +98,117 @@ public class LoginActivity  extends AppCompatActivity {
             }
         });
     }
-    private void Login(final String email, final String password){
+    private void Login(final String username, final String password){
+
+
         loading.setVisibility(View.VISIBLE);
         btn_login.setVisibility(View.GONE);
+        RequestQueue queue = Volley.newRequestQueue(this);
+
+        Map<String, String> params = new HashMap();
+        params.put("username", username);
+        params.put("password", password);
 
 
-        StringRequest stringRequest = new StringRequest(Request.Method.POST, server_url,
-                new Response.Listener<String>() {
+        JSONObject parameters = new JSONObject(params);
+        JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(
+                Request.Method.POST,
+                server_url,
+                parameters,
+                new Response.Listener<JSONObject>() {
                     @Override
-                    public void onResponse(String response) {
+                    public void onResponse(JSONObject response) {
+                        //TODO
                         try {
-                            JSONObject jsonObject = new JSONObject(response);
-                            String success = jsonObject.getString("success");
-                            JSONArray jsonArray = jsonObject.getJSONArray("login");
+                            String ok = response.getString("message");
+                            if(ok.equals("OK")) {
 
-                            if (success.equals("ok")){
-                                for (int i=0; i<jsonArray.length(); i++){
-                                    JSONObject object = jsonArray.getJSONObject(i);
+                                Intent intent = new Intent(LoginActivity.this, HomeActivity.class);
+//                                intent.putExtra("name", username);
+//                                intent.putExtra("username", password);
+                                startActivity(intent);
+                                loading.setVisibility(View.GONE);
 
-                                    String name = object.getString("name").trim();
-                                    String email = object.getString("email").trim();
-
-                                    Toast.makeText(LoginActivity.this,
-                                            "Succes Login. \nYour Name: "
-                                            + name +"\nYour Email : "
-                                            +email, Toast.LENGTH_SHORT)
-                                            .show();
-                                    loading.setVisibility(View.GONE);
-                                }
+                            } else {
+                                showMessage("Wrong username or password");
                             }
 
-                        } catch (JSONException e) {
+                            showMessage(response.toString());
+                        }catch (JSONException e) {
                             e.printStackTrace();
-                            loading.setVisibility(View.GONE);
-                            btn_login.setVisibility(View.VISIBLE);
-                            Toast.makeText(LoginActivity.this, " Errror " +e.toString(), Toast.LENGTH_SHORT).show();
                         }
                     }
-                },
-                new Response.ErrorListener() {
-                    @Override
-                    public void onErrorResponse(VolleyError error) {
-                        loading.setVisibility(View.GONE);
-                        btn_login.setVisibility(View.VISIBLE);
-                        Toast.makeText(LoginActivity.this, " Errror " +error.toString(), Toast.LENGTH_SHORT).show();
+                }, new Response.ErrorListener() {
 
-                    }
-                })
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                // TODO: Handle error
+                error.printStackTrace();
+                Toast.makeText(LoginActivity.this, " Errror " +error.toString(), Toast.LENGTH_SHORT).show();
+                loading.setVisibility(View.GONE);
+                btn_login.setVisibility(View.VISIBLE);
+            }
+        });
+        queue.add(jsonObjectRequest);
 
 
-        {
-          @Override
-          protected Map<String, String> getParams() throws AuthFailureError{
-              Map<String, String> params = new HashMap<>();
-              params.put("email", email);
-              params.put("passwrd" , password);
-              return params;
-          }
-
-        };
-
-        RequestQueue requestQueue = Volley.newRequestQueue(this);
-        requestQueue.add(stringRequest);
+//        StringRequest stringRequest = new StringRequest(Request.Method.POST, server_url,
+//                new Response.Listener<String>() {
+//                    @Override
+//                    public void onResponse(String response) {
+//                        try {
+//                            JSONObject jsonObject = new JSONObject(response);
+//                            String success = jsonObject.getString("success");
+//                            JSONArray jsonArray = jsonObject.getJSONArray("login");
+//
+//                            if (success.equals("OK")){
+//                                for (int i=0; i<jsonArray.length(); i++){
+//                                    JSONObject object = jsonArray.getJSONObject(i);
+//
+//                                    String name = object.getString("name").trim();
+//                                    String username = object.getString("username").trim();
+//
+//
+//                                    Intent intent = new Intent(LoginActivity.this, HomeActivity.class);
+//                                    intent.putExtra("name", name);
+//                                    intent.putExtra("username", username);
+//                                    startActivity(intent);
+//                                    loading.setVisibility(View.GONE);
+//                                }
+//                            }
+//
+//                        } catch (JSONException e) {
+//                            e.printStackTrace();
+//                            loading.setVisibility(View.GONE);
+//                            btn_login.setVisibility(View.VISIBLE);
+//                            Toast.makeText(LoginActivity.this, " Errror " +e.toString(), Toast.LENGTH_SHORT).show();
+//                        }
+//                    }
+//                },
+//                new Response.ErrorListener() {
+//                    @Override
+//                    public void onErrorResponse(VolleyError error) {
+//                        loading.setVisibility(View.GONE);
+//                        btn_login.setVisibility(View.VISIBLE);
+//                        Toast.makeText(LoginActivity.this, " Errror " +error.toString(), Toast.LENGTH_SHORT).show();
+//
+//                    }
+//                })
+//
+//
+//        {
+//            @Override
+//            protected Map<String, String> getParams() throws AuthFailureError{
+//                Map<String, String> params = new HashMap<>();
+//                params.put("username", username);
+//                params.put("password" , password);
+//                return params;
+//            }
+//
+//        };
+//
+//        RequestQueue requestQueue = Volley.newRequestQueue(this);
+//        requestQueue.add(stringRequest);
     }
 
 }
